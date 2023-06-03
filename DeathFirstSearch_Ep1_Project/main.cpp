@@ -15,6 +15,7 @@ using LinkedPair = std::pair<int, int>;
 std::vector<int> GetDistancesBetweenNodesAndAgent(std::vector<LinkedPair>& links, int AgentPos, int NumberOfNodes) {
     std::vector<int> NodeNumberToDistanceToAgent(NumberOfNodes);
 
+    std::cerr << "All distances:\n";
     for (int i = 0; i < links.size(); ++i) {
         for (auto it = links.begin(); it != links.end(); ++it) {
             auto [LeftNode, RightNode] = *it;
@@ -38,25 +39,52 @@ std::vector<int> GetDistancesBetweenNodesAndAgent(std::vector<LinkedPair>& links
             }
         }
     }
+
+    NodeNumberToDistanceToAgent[AgentPos] = 0;
     return NodeNumberToDistanceToAgent;
 }
 
-void getLinkToBreak(std::vector<LinkedPair>& links, int AgentPos, int NumberOfNodes) {
+LinkedPair getLinkToBreak(std::vector<LinkedPair>& links, int AgentPos, int NumberOfNodes, std::vector<int>& gateways) {
     std::vector<int> NodeNumberToDistanceToAgent = GetDistancesBetweenNodesAndAgent(links, AgentPos, NumberOfNodes);
-    //std::min_element()
+    int ClosestToAgentNodeLinkedWithGateway = 501; // The maximum index of the node is 500 so 501 we consider as infinity
+    int DistanceFromNodeToAgent = 501;
+
+    LinkedPair LinkToBreak = *links.begin();
+    auto IterLinkToRemove = links.begin();
+    for (int GatewayPos : gateways) {
+        for (auto it = links.begin(); it != links.end(); ++it) {
+            auto [LeftNode, RightNode] = *it;
+
+            if (LeftNode == GatewayPos) {
+                if (NodeNumberToDistanceToAgent[RightNode] < DistanceFromNodeToAgent) {
+                    ClosestToAgentNodeLinkedWithGateway = RightNode;
+                    DistanceFromNodeToAgent = NodeNumberToDistanceToAgent[RightNode];
+                    auto& [LeftNodeToBreak, RightNodeToBreak] = LinkToBreak;
+                    LeftNodeToBreak = LeftNode;
+                    RightNodeToBreak = RightNode;
+                    IterLinkToRemove = it;
+                }
+            }
+
+            if (RightNode == GatewayPos) {
+                if (NodeNumberToDistanceToAgent[LeftNode] < DistanceFromNodeToAgent) {
+                    ClosestToAgentNodeLinkedWithGateway = LeftNode;
+                    DistanceFromNodeToAgent = NodeNumberToDistanceToAgent[LeftNode];
+                    auto& [LeftNodeToBreak, RightNodeToBreak] = LinkToBreak;
+                    LeftNodeToBreak = LeftNode;
+                    RightNodeToBreak = RightNode;
+                    IterLinkToRemove = it;
+                }
+            }
+        }
+    }
+
+    links.erase(IterLinkToRemove);
+    return LinkToBreak;
 }
 
 int main()
 {
-
-
-    std::vector<int> vec(10);
-
-    auto it = vec.begin() + 9;
-    int num = it - vec.begin();
-    std::cout << num << std::endl;;
-
-
     int n; // the total number of nodes in the level, including the gateways
     int l; // the number of links
     int e; // the number of exit gateways
@@ -86,19 +114,12 @@ int main()
         int BobnetAgentPos; // The index of the node on which the Bobnet agent is positioned this turn
         cin >> BobnetAgentPos; cin.ignore();
 
-        std::vector<int> NodeNumberToDistanceToAgent = GetDistancesBetweenNodesAndAgent(links, BobnetAgentPos, n);
-        for (int i = 0; i < NodeNumberToDistanceToAgent.size(); ++i) {
-            std::cerr << "Node " << i << " is " << NodeNumberToDistanceToAgent[i] << " steps from Agent" << '\n';
-        }
-
-
-        //auto [LeftNode, RightNode] = getLinkToBreak(links, gateways);
-
+        auto [LeftNode, RightNode] = getLinkToBreak(links, BobnetAgentPos, n, gateways);
 
         // Write an action using cout. DON'T FORGET THE "<< endl"
         // To debug: cerr << "Debug messages..." << endl;
 
         // Example: LeftNode and RightNode are the indices of the nodes you wish to sever the link between
-        //std::cout << LeftNode << ' ' << RightNode << std::endl;
+        std::cout << LeftNode << ' ' << RightNode << std::endl;
     }
 }
